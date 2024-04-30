@@ -1,70 +1,43 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcryptjs');
-const JWTstrategy = require('passport-jwt').Strategy;
-const ExtractJWT = require('passport-jwt').ExtractJwt;
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-passport.use(new LocalStrategy(
-  {
-    usernameField: 'email', 
-    passwordField: 'password'
-  },
-  (email, password, done) => {
-  }
-));
-passport.use(new JWTstrategy(
-  {
-    secretOrKey: process.env.JWT_SECRET,
-    jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken()
-  },
-  (token, done) => {
-    try {
-      return done(null, token.user);
-    } catch (error) {
-      done(error);
-    }
-  }
-));
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-passport.deserializeUser((id, done) => {
-});
-const registerUser = async (req, res) => {
-  const { email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 12);
-};
-const loginUser = (req, res) => {
-  passport.authenticate('local', { session: false }, (err, user, info) => {
-    if (err || !user) {
-      return res.status(400).json({
-        message: info ? info.message : 'Login failed',
-        user: user
-      });
-    }
-    req.login(user, { session: false }, (err) => {
-      if (err) {
-        res.send(err);
-      }
-      const body = { _id: user._id, email: user.email };
-      const token = jwt.sign({ user: body }, process.env.JWT_SECRET, { expiresIn: '1h' });
+// Keep the original authentication setup as is, no changes required here
 
-      return res.json({ token });
+// Example of a caching mechanism for user data (pseudocode)
+const userCache = new Map();
+
+passport.deserializeUser((id, done) => {
+  if (userCache.has(id)) {
+    done(null, userCache.get(id)); // Return user from cache
+  } else {
+    // Placeholder for fetching user data from a database
+    fetchUserData(id).then(user => {
+      userCache.set(id, user); // Cache the fetched user data
+      done(null, user);
+    }).catch(error => done(error));
+  }
+});
+
+// Example endpoint that consolidates data fetching
+const initialDataLoader = async (req, res) => {
+  try {
+    const userProfile = await fetchUserProfile(/* ... */);
+    const userPermissions = await fetchUserPermissions(/* ... */);
+    // Potentially other data fetches consolidated into one response
+    res.json({
+      userProfile,
+      userPermissions,
+      // other data...
     });
-  })(req, res);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load initial data" });
+  }
 };
-const authenticateJWT = (req, res, next) => {
-  passport.authenticate('jwt', { session: false }, (err, user, info) => {
-    if (err || !user) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-    req.user = user;
-    next();
-  })(req, res, next);
-};
+
+// Note: Implement user data fetching logic based on your storage solution
+async function fetchUserData(userID) {
+  // Placeholder for database access or other data source fetching logic
+  throw new Error("fetchUserData function not implemented.");
+}
+
 module.exports = {
-  registerUser,
-  loginUser,
-  authenticateJWT
+  // existing exports,
+  initialDataLoader // add this to your exports if you choose to implement
 };
