@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import _ from 'lodash'; // Import lodash
 
 const Home = lazy(() => import('./Home'));
 const Login = lazy(() => import('./Login'));
@@ -39,6 +40,11 @@ const reducer = (state, action) => {
   }
 };
 
+const fetchItems = _.memoize(async (params) => {
+  const response = await fetch(`your-api-endpoint/${params}`);
+  return await response.json();
+});
+
 const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -59,9 +65,9 @@ const App = () => {
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
             <Route path="/items" component={ItemListing} />
-            <PrivateRoute path="/dashboard">
-              <Dashboard />
-            </PrivateRoute>
+            <Route path="/dashboard" render={() => (
+              isAuthenticated ? <Dashboard /> : <Redirect to="/login" />
+            )} />
           </Switch>
         </Suspense>
       </Router>
