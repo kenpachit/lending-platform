@@ -1,24 +1,24 @@
 const mongoose = require('mongoose');
 
-const itemSchema = new mongoose.Schema({
-  name: {
+const lendingItemSchema = new mongoose.Schema({
+  itemName: {
     type: String,
     required: true,
   },
-  description: String,
-  owner: {
+  itemDescription: String,
+  itemOwner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'User', 
     required: true,
   },
-  availability: {
+  isAvailable: { 
     type: Boolean,
     default: true,
   },
-  borrower: {
+  currentBorrower: { 
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'User', 
   },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Item', itemSchema);
+module.exports = mongoose.model('LendingItem', lendingItemSchema);
