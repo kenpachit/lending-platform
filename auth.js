@@ -1,13 +1,9 @@
-// Keep the original authentication setup as is, no changes required here
-
-// Example of a caching mechanism for user data (pseudocode)
 const userCache = new Map();
 
 passport.deserializeUser((id, done) => {
   if (userCache.has(id)) {
     done(null, userCache.get(id)); // Return user from cache
   } else {
-    // Placeholder for fetching user data from a database
     fetchUserData(id).then(user => {
       userCache.set(id, user); // Cache the fetched user data
       done(null, user);
@@ -15,12 +11,29 @@ passport.deserializeUser((id, done) => {
   }
 });
 
-// Example endpoint that consolidates data fetching
+// Generic caching mechanism
+const functionCache = new Map();
+
+async function cachedFunction(key, fetchFunction) {
+  if (functionCache.has(key)) {
+    return functionCache.get(key);
+  } else {
+    try {
+      const result = await fetchFunction();
+      functionCache.set(key, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
 const initialDataLoader = async (req, res) => {
   try {
-    const userProfile = await fetchUserProfile(/* ... */);
-    const userPermissions = await fetchUserPermissions(/* ... */);
-    // Potentially other data fetches consolidated into one response
+    // Assuming these functions are now cached
+    const userProfile = await cachedFunction(`userProfile_${req.userId}`, () => fetchUserProfile(req.userId));
+    const userPermissions = await cachedFunction(`userPermissions_${req.userId}`, () => fetchUserPermissions(req.userId));
+    
     res.json({
       userProfile,
       userPermissions,
@@ -31,10 +44,18 @@ const initialDataLoader = async (req, res) => {
   }
 };
 
-// Note: Implement user data fetching logic based on your storage solution
+// Placeholder implementations
 async function fetchUserData(userID) {
-  // Placeholder for database access or other data source fetching logic
   throw new Error("fetchUserData function not implemented.");
+}
+
+// These functions should be implemented to fetch actual data 
+async function fetchUserProfile(userID) {
+  throw new Error("fetchUserProfile function not implemented.");
+}
+
+async function fetchUserPermissions(userID) {
+  throw new Error("fetchUserPermissions function not implemented.");
 }
 
 module.exports = {
