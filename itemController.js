@@ -1,8 +1,5 @@
-npm install node-cache
-```
-```javascript
 const mongoose = require('mongoose');
-const Item = require('./models/Item');
+const ItemModel = require('./models/Item');
 const NodeCache = require('node-cache');
 const itemCache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
 
@@ -10,23 +7,23 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
 
-const createItem = async (itemData) => {
-  if (!itemData.name || !itemData.price) {
+const addItem = async (itemDetails) => { 
+  if (!itemDetails.name || !itemDetails.price) {
     throw new Error('Missing required fields');
   }
-  const newItem = new Item(itemData);
+  const newItem = new ItemModel(itemDetails);
   const savedItem = await newItem.save();
-  itemCache.del("allItems");
+  itemCache.del("allItemsCache");
   return savedItem;
 };
 
-const readItem = async (id) => {
-  const cacheKey = `item_${id}`;
+const fetchItemById = async (itemId) => { 
+  const cacheKey = `item_${itemId}`;
   const cachedItem = itemCache.get(cacheKey);
   if (cachedItem) {
     return cachedItem;
   }
-  const item = await Item.findById(id);
+  const item = await ItemModel.findById(itemId);
   if (!item) {
     throw new Error('Item not found');
   }
@@ -34,37 +31,37 @@ const readItem = async (id) => {
   return item;
 };
 
-const readAllItems = async () => {
-  const cacheKey = "allItems";
-  const cachedItems = itemCache.get(cacheKey);
+const fetchAllItems = async () => { 
+  const allItemsCacheKey = "allItemsCache";
+  const cachedItems = itemCache.get(allItemsCacheKey);
   if (cachedItems) {
     return cachedItems;
   }
-  const items = await Item.find({});
-  itemCache.set(cacheKey, items);
+  const items = await ItemModel.find({});
+  itemCache.set(allItemsCacheKey, items);
   return items;
 };
 
-const updateItem = async (id, updateData) => {
-  const cacheKey = `item_${id}`;
-  const updatedItem = await Item.findByIdAndUpdate(id, updateData, { new: true });
+const updateItemDetails = async (itemId, newData) => { 
+  const cacheKey = `item_${itemId}`;
+  const updatedItem = await ItemModel.findByIdAndUpdate(itemId, newData, { new: true });
   if (!updatedItem) {
     throw new Error('Item not found');
   }
   itemCache.set(cacheKey, updatedItem);
-  itemCache.del("allItems");
+  itemCache.del("allItemsCache");
   return updatedItem;
 };
 
-const deleteItem = async (id) => {
-  const cacheKey = `item_${id}`;
-  const deletedItem = await Item.findByIdAndDelete(id);
+const removeItem = async (itemId) => {
+  const cacheKey = `item_${itemId}`;
+  const deletedItem = await ItemModel.findByIdAndDelete(itemId);
   if (!deletedItem) {
     throw new Error('Item not found');
   }
   itemCache.del(cacheKey);
-  itemCache.del("allItems");
+  itemCache.del("allItemsCache");
   return deletedItem;
 };
 
-module.exports = { createItem, readItem, readAllItems, updateItem, deleteItem };
+module.exports = { addItem, fetchItemById, fetchAllItems, updateItemDetails, removeItem };
