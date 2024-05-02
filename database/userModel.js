@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
-    index: true, // Ensure an index for faster queries
+    index: true,
   },
   email: {
     type: String,
@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
-    index: true, // Ensure an index for faster queries
+    index: true,
   },
   password: {
     type: String,
@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   items: [{
     item: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Item'
+      ref: 'Item',
     },
     status: {
       type: String,
