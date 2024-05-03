@@ -1,48 +1,28 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    index: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true,
-    index: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  items: [{
-    item: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Item',
-    },
-    status: {
-      type: String,
-      enum: ['lent', 'borrowed'],
+const bulkUpdateUsers = async (userUpdates) => {
+  const updateOperations = userUpdates.map(update => ({
+    updateOne: {
+      filter: { _id: update.userId },
+      update: { $set: update.updateData }
     }
-  }]
-}, {
-  timestamps: true
-});
+  }));
 
-userSchema.pre('save', async function (next) {
-  const user = this;
-  if (user.isModified('password')) {
-    user.password = await bcrypt.hash(user.password, 8);
+  try {
+    await UserModel.bulkWrite(updateOperations);
+    console.log('Bulk update successful');
+  } catch (error) {
+    console.error('Bulk update error:', error);
   }
-  next();
-});
+};
+```
+```javascript
+const getUserLentItems = async (userId) => {
+  const items = await UserModel.aggregate([
+    { $match: { _id: userId } },
+    { $unwind: '$items' },
+    { $match: { 'items.status': 'lent' } },
+    { $group: { _id: '$items.item', count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]);
 
-const UserModel = mongoose.model('User', userSchema);
-
-module.exports = UserModel;
+  return items;
+};
