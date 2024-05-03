@@ -23,8 +23,8 @@ app.get('/api/sample', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack); 
-  res.status(500).send('Something broke!'); 
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
