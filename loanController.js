@@ -1,5 +1,6 @@
-const users = {}; // Assuming this will be used for user management in future updates
+const users = {}; // Placeholder for future user management implementation
 const loans = [];
+const transactionHistoryCache = {}; // Cache to store computed transaction histories
 
 function requestLoan(requesterId, lenderId, itemId) {
   const isAlreadyRequested = loans.some(
@@ -10,9 +11,9 @@ function requestLoan(requesterId, lenderId, itemId) {
     return { error: 'Item is already requested by someone else.' };
   }
 
-  // Dynamically generate new loan ID based on existing lengths to avoid conflicts
+  // Generate a new loan ID considering scalability
   const newLoan = {
-    id: loans.length + 1, // Improvement: consider a more unique ID generation method for scalability
+    id: loans.length + 1,
     itemId,
     requesterId,
     lenderId,
@@ -20,6 +21,9 @@ function requestLoan(requesterId, lenderId, itemId) {
   };
 
   loans.push(newLoan);
+  // Invalidate cache for both users involved
+  invalidateCache(requesterId);
+  invalidateCache(lenderId);
   return newLoan;
 }
 
@@ -36,6 +40,9 @@ function acceptLoan(loanId) {
   }
 
   loan.status = 'accepted';
+  // Invalidate cache for both users involved
+  invalidateCache(loan.requesterId);
+  invalidateCache(loan.lenderId);
   return loan;
 }
 
@@ -52,12 +59,26 @@ function markItemReturned(loanId) {
   }
 
   loan.status = 'returned';
+  // Invalidate cache for both users involved
+  invalidateCache(loan.requesterId);
+  invalidateCache(loan.lenderId);
   return loan;
 }
 
+function invalidateCache(userId) {
+  delete transactionHistoryCache[userId];
+}
+
 function getUserTransactionHistory(userId) {
-  // Direct use of filter without intermediate assignment for efficiency
-  return loans.filter((loan) => loan.requesterId === userId || loan.lenderId === userId);
+  // Check if result is already cached
+  if (transactionHistoryCache[userId]) {
+    return transactionHistoryCache[userId];
+  }
+
+  const history = loans.filter((loan) => loan.requesterId === userId || loan.lenderId === userId);
+  // Cache the result before returning
+  transactionHistoryCache[userId] = history;
+  return history;
 }
 
 module.exports = {
