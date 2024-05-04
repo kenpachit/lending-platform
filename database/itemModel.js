@@ -21,28 +21,40 @@ const lendingItemSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Adding a method to log information about lending items
-lendingItemSchema.methods.logDetails = function() {
-  console.log(`Item Name: ${this.itemName}`);
-  console.log(`Description: ${this.itemDescription}`);
-  console.log(`Owner ID: ${this.itemOwner}`);
-  console.log(`Available: ${this.isAvailable}`);
+lendingItemSchema.methods = {
+  ...lendingItemSchema.methods,
 
-  if (this.currentBorrower) {
-    console.log(`Currently Borrowed By: ${this.currentBorrower}`);
-  } else {
-    console.log("Currently Not Borrowed");
+  logDetails() {
+    this.logBasicDetails();
+    this.logAvailability();
+    this.logBorrowerDetails();
+  },
+
+  logBasicDetails() {
+    console.log(`Item Name: ${this.itemName}`);
+    console.log(`Description: ${this.itemDescription}`);
+    console.log(`Owner ID: ${this.itemOwner}`);
+  },
+
+  logAvailability() {
+    console.log(`Available: ${this.isAvailable}`);
+  },
+
+  logBorrowerDetails() {
+    const borrowerMessage = this.currentBorrower
+      ? `Currently Borrowed By: ${this.currentBorrower}`
+      : "Currently Not Borrowed";
+    console.log(borrowerMessage);
   }
 };
 
 module.exports = mongoose.model('LendingItem', lendingItemSchema);
 
-const LendingItem = require('./path-to-your-model-file'); // Adjust the path as necessary
+const LendingItem = require('./path-to-your-model-file'); 
 
-// Assume you have found an item from your database, for example
 LendingItem.findById(itemId)
   .then(item => {
-    item.logDetails(); // This will log the details of the item to the console.
+    item.logDetails();
   })
   .catch(err => {
     console.error('Error fetching item:', err);
