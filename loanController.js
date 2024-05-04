@@ -3,6 +3,10 @@ const loans = [];
 const transactionHistoryCache = {}; // Cache to store computed transaction histories
 
 function requestLoan(requesterId, lenderId, itemId) {
+  if (!requesterId || !lenderId || !itemId) {
+    return { error: 'Invalid input: requesterId, lenderId, and itemId are all required.' };
+  }
+
   const isAlreadyRequested = loans.some(
     (loan) => loan.itemId === itemId && loan.status === 'pending'
   );
@@ -11,9 +15,9 @@ function requestLoan(requesterId, lenderId, itemId) {
     return { error: 'Item is already requested by someone else.' };
   }
 
-  // Generate a new loan ID considering scalability
+  const newLoanId = loans.length + 1;
   const newLoan = {
-    id: loans.length + 1,
+    id: newLoanId,
     itemId,
     requesterId,
     lenderId,
@@ -21,15 +25,17 @@ function requestLoan(requesterId, lenderId, itemId) {
   };
 
   loans.push(newLoan);
-  // Invalidate cache for both users involved
   invalidateCache(requesterId);
   invalidateCache(lenderId);
   return newLoan;
 }
 
 function acceptLoan(loanId) {
-  const loanIndex = loans.findIndex((loan) => loan.id === loanId);
+  if (!loanId) {
+    return { error: 'Invalid input: loanId is required.' };
+  }
 
+  const loanIndex = loans.findIndex((loan) => loan.id === loanId);
   if (loanIndex === -1) {
     return { error: 'Loan request not found.' };
   }
@@ -40,13 +46,16 @@ function acceptLoan(loanId) {
   }
 
   loan.status = 'accepted';
-  // Invalidate cache for both users involved
   invalidateCache(loan.requesterId);
   invalidateCache(loan.lenderId);
   return loan;
 }
 
 function markItemReturned(loanId) {
+  if (!loanId) {
+    return { error: 'Invalid input: loanId is required.' };
+  }
+
   const loanIndex = loans.findIndex((loan) => loan.id === loanId);
 
   if (loanIndex === -1) {
@@ -59,24 +68,31 @@ function markItemReturned(loanId) {
   }
 
   loan.status = 'returned';
-  // Invalidate cache for both users involved
   invalidateCache(loan.requesterId);
   invalidateCache(loan.lenderId);
   return loan;
 }
 
 function invalidateCache(userId) {
+  if (!userId) {
+    throw new Error('Invalid input: userId is required to invalidate cache.');
+  }
   delete transactionHistoryCache[userId];
 }
 
 function getUserTransactionHistory(userId) {
-  // Check if result is already cached
+  if (!userId) {
+    throw new Error('Invalid input: userId is required for transaction history lookup.');
+  }
+
   if (transactionHistoryCache[userId]) {
     return transactionHistoryCache[userId];
   }
 
-  const history = loans.filter((loan) => loan.requesterId === userId || loan.lenderId === userId);
-  // Cache the result before returning
+  const history = loans.filter(
+    (loan) => loan.requesterId === userId || loan.lenderId === userId
+  );
+
   transactionHistoryCache[userId] = history;
   return history;
 }
